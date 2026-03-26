@@ -25,11 +25,11 @@ class Actions:
         self.WIDTH  = self.BOTTOM_RIGHT_X - self.TOP_LEFT_X
         self.HEIGHT = self.BOTTOM_RIGHT_Y - self.TOP_LEFT_Y
 
-        self.CARD_BAR_X = int(self.TOP_LEFT_X + 0.20 * self.WIDTH)
-        self.CARD_BAR_Y = int(self.TOP_LEFT_Y + 0.83 * self.HEIGHT)
+        self.CARD_BAR_X = int(self.TOP_LEFT_X + 0.16 * self.WIDTH)
+        self.CARD_BAR_Y = int(self.TOP_LEFT_Y + 0.80 * self.HEIGHT)
 
         self.CARD_BAR_WIDTH  = int(0.70 * self.WIDTH)
-        self.CARD_BAR_HEIGHT = int(0.13 * self.HEIGHT)
+        self.CARD_BAR_HEIGHT = int(0.15 * self.HEIGHT)
         print(self.CARD_BAR_X, self.CARD_BAR_Y, self.CARD_BAR_WIDTH, self.CARD_BAR_HEIGHT)
         # Card position to key mapping
         self.card_keys = {
