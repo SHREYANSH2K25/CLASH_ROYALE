@@ -10,7 +10,7 @@ from pynput import keyboard
 from datetime import datetime
 import glob
 import json
-from env import ClashRoyaleEnv
+from env2 import ClashRoyaleEnv
 
 
 class KeyboardController:
@@ -78,6 +78,7 @@ class DQN_agn:
         self.target_model.load_state_dict(self.model.state_dict())
 
 
+    @staticmethod
     def get_latest_model_path(models_dir="models"):
         model_files = glob.glob(os.path.join(models_dir, "model_*.pth"))
         if not model_files:
@@ -112,13 +113,13 @@ def train():
             print(f"Epsilon loaded: {epsilon}")
 
     controller = KeyboardController()
-
     for ep in range(episodes):
         if controller.is_exit_requested():
             print("Training interrupted by user.")
             break
 
         state = env.reset()
+        print("reset")
         print(f"Episode {ep + 1} starting. Epsilon: {epsilon:.3f}")
         total_reward = 0
         done = False
@@ -130,6 +131,7 @@ def train():
                 with torch.no_grad():
                     q_values = agent.model(torch.FloatTensor(state).unsqueeze(0))
                 action = q_values.argmax().item()
+            # return
 
             next_state, reward, done = env.step(action)
 
@@ -154,9 +156,11 @@ def train():
 
                 target_f = agent.model(torch.FloatTensor(s)).clone().detach()
                 target_f[a] = float(target)
-
+                
                 prediction = agent.model(torch.FloatTensor(s))[a]
-                loss = agent.criterion(prediction, target_f[a])
+                loss = agent.criterion(prediction, torch.tensor(target))
+                # prediction = agent.model(torch.FloatTensor(s))[a]
+                # loss = agent.criterion(prediction, target_f[a])
 
                 agent.optimizer.zero_grad()
                 loss.backward()
@@ -179,3 +183,4 @@ def train():
 
 if __name__ == "__main__":
     train()
+    # print(5)
