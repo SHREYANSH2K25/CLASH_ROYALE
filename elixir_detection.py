@@ -1,45 +1,45 @@
 import cv2
 import numpy as np
+import pygetwindow as gw
+import pyautogui
 
-img = cv2.imread("clash.jpeg")
-if img is None:
-    print("Image not found")
-    exit()
 
-h, w, _ = img.shape
-roi = img[int(h*0.8):h, 0:w]
+def count_elixer():
+    windows = gw.getWindowsWithTitle("BlueStacks")
+    if not windows:
+        print("BlueStacks window not found")
+        return 0
 
-hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+    win = windows[0]
+    left, top, width, height = win.left, win.top, win.width, win.height
 
-lower_purple = np.array([130, 80, 80])
-upper_purple = np.array([170, 255, 255])
+    screenshot = pyautogui.screenshot(region=(left, top, width, height))
+    img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
-mask = cv2.inRange(hsv, lower_purple, upper_purple)
+    h, w, _ = img.shape
 
-contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    roi = img[int(h * 0.8):h, 0:w]
 
-elixir = 0
+    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
-if contours:
-    largest = max(contours, key=cv2.contourArea)
-    x, y, w_box, h_box = cv2.boundingRect(largest)
+    lower_purple = np.array([130, 80, 80])
+    upper_purple = np.array([170, 255, 255])
 
-    cv2.rectangle(img, (x, y + int(h*0.8)), (x+w_box, y+h_box + int(h*0.8)), (0,255,0), 2)
+    mask = cv2.inRange(hsv, lower_purple, upper_purple)
 
-    elixir = int((w_box / (w * 0.7)) * 10)
-    elixir = max(0, min(10, elixir))
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-print("Elixir:", elixir)
+    elixir = 0
 
-cv2.putText(img, f"Elixir: {elixir}", (50, h-50),
-            cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+    if contours:
+        largest = max(contours, key=cv2.contourArea)
+        x, y, w_box, h_box = cv2.boundingRect(largest)
+        elixir = int((w_box / (w * 0.7)) * 10)
+        elixir = max(0, min(10, elixir))
 
-cv2.imshow("Detection", img)
-cv2.imshow("Mask", mask)
+    return elixir
 
-while True:
-    key = cv2.waitKey(10) & 0xFF
-    if key == 27 or key == ord('q'):
-        break
 
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    value = count_elixer()
+    print("Elixir:", value)

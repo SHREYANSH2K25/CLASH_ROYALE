@@ -1,0 +1,14 @@
+# Virtual env
+clash_env/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Env variables
+.env
+
+# Optional (if large/unnecessary)
+screenshots/
