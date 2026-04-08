@@ -80,7 +80,8 @@ class DQN_agn:
 
     def load(self, path):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.model.load_state_dict(torch.load(path, map_location=device))
+        ### CHANGES : map_location=device to auto handle the device conversion when loading the saved model state
+        self.model.load_state_dict(torch.load(path))
         # CRUCIAL : function updates target model after set of steps
         self.target_model.load_state_dict(self.model.state_dict())
 
@@ -95,7 +96,7 @@ class DQN_agn:
 
 
 def train():
-    env = ClashRoyaleEnv()
+    env = ClashRoyaleEnv() #Initialized gaming world
 
     memory       = ReplayMemory(10000)
     batch_size   = 32
@@ -105,8 +106,9 @@ def train():
     epsilon_decay = 0.997
     action_size  = env.action_size
 
-    agent = DQN_agn(env.state_size, action_size)
+    agent = DQN_agn(env.state_size, action_size) 
 
+    # make sure models folder exits else torch.save() cmnd will fail
     os.makedirs("models", exist_ok=True)
 
     latest_model = DQN_agn.get_latest_model_path("models")
@@ -120,6 +122,7 @@ def train():
             print(f"Epsilon loaded: {epsilon}")
 
     controller = KeyboardController()
+    
     for ep in range(episodes):
         if controller.is_exit_requested():
             print("Training interrupted by user.")
@@ -133,18 +136,23 @@ def train():
         total_reward = 0
         done = False
 
-        while not done:
+        # STEP 1 : EXPLORATION V/S EXPLOITATION
+        while not done: 
             if controller.is_exit_requested():
                 print("Training interrupted by user.")
                 return 
             if random.random() < epsilon:
                 action = random.randrange(action_size)
             else:
+                # passes current state through NN and picks highest predicted score
                 with torch.no_grad():
                     q_values = agent.model(torch.FloatTensor(state).unsqueeze(0))
+                    # unsqueeze to match dimension mismatch
                 action = q_values.argmax().item()
             # return
 
+            # Step 2 : Interaction and Memory
+            #apply the move
             next_state, reward, done = env.step(action)
 
             if next_state is None:
@@ -157,22 +165,30 @@ def train():
 
             if len(memory) < batch_size:
                 continue
-
+            
+            #Step 3 : Learning (Backpropagation)
             batch = memory.sample(batch_size)
             for s, a, r, s2, d in batch:
                 target = r
                 if not d:
+                    # Bellman equation
                     target += agent.gamma * torch.max(
                         agent.target_model(torch.tensor(s2,dtype=torch.float32))
                     ).item()
 
+                # we use Bellman to generate correct values which policy network(model here), uses to learn
+                # We ask the Policy Network what it currently thinks the values are for all possible actions in the current state s. 
+                # We "detach" it so we don't accidentally start training yet
                 target_f = agent.model(torch.FloatTensor(s)).clone().detach()
+                # We take that baseline and replace only the value for the action a we actually took with our new, better target calculation.
                 target_f[a] = float(target)
                 
+                # Policy guesses value of action a in state s
                 prediction = agent.model(torch.tensor(s, dtype=torch.float32))[a]
-
+                # target value of a in state s
                 target_tensor = torch.tensor(target, dtype=torch.float32)
 
+                # compute loss
                 loss = agent.criterion(prediction, target_tensor)
                 # prediction = agent.model(torch.FloatTensor(s))[a]
                 # loss = agent.criterion(prediction, target_f[a])
