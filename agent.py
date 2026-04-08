@@ -92,7 +92,7 @@ def train():
 
     memory       = ReplayMemory(10000)
     batch_size   = 32
-    episodes     = 10000
+    episodes     = 50
     epsilon      = 1.0
     epsilon_min  = 0.01
     epsilon_decay = 0.997
@@ -117,14 +117,19 @@ def train():
         if controller.is_exit_requested():
             print("Training interrupted by user.")
             break
-
+        # env.click_battle_start()
+        # time.sleep(1)
         state = env.reset()
+
         print("reset")
         print(f"Episode {ep + 1} starting. Epsilon: {epsilon:.3f}")
         total_reward = 0
         done = False
 
         while not done:
+            if controller.is_exit_requested():
+                print("Training interrupted by user.")
+                return 
             if random.random() < epsilon:
                 action = random.randrange(action_size)
             else:
@@ -151,14 +156,17 @@ def train():
                 target = r
                 if not d:
                     target += agent.gamma * torch.max(
-                        agent.target_model(torch.FloatTensor(s2))
+                        agent.target_model(torch.tensor(s2,dtype=torch.float32))
                     ).item()
 
                 target_f = agent.model(torch.FloatTensor(s)).clone().detach()
                 target_f[a] = float(target)
                 
-                prediction = agent.model(torch.FloatTensor(s))[a]
-                loss = agent.criterion(prediction, torch.tensor(target))
+                prediction = agent.model(torch.tensor(s, dtype=torch.float32))[a]
+
+                target_tensor = torch.tensor(target, dtype=torch.float32)
+
+                loss = agent.criterion(prediction, target_tensor)
                 # prediction = agent.model(torch.FloatTensor(s))[a]
                 # loss = agent.criterion(prediction, target_f[a])
 

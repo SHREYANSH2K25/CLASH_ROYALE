@@ -58,7 +58,7 @@ class ClashRoyaleEnv:
         # ── Action space ───────────────────────────────────────────────────────
         self.num_cards   = 4
         self.grid_width  = 18
-        self.grid_height = 14
+        self.grid_height = 28
         self.state_size  = 1 + 2 * (MAX_ALLIES + MAX_ENEMIES)
         
         self.available_actions = self._build_action_space()
@@ -102,7 +102,14 @@ class ClashRoyaleEnv:
     #         api_key=api_key
     #     )
 
-    # return number of enemy and number of ally and, 
+    # return number of enemy and number of ally and,
+    def fxn(self,a,b):
+        var_a = 4
+        var_b = 0.03
+        var_c = 0.2
+        # if 775-a > 
+        return (1/(1+ np.exp(var_b*(456-a)))) > var_c
+
     def _run_detection(self):
         """Run YOLO on the current frame once per step, return detection list."""
         # detect = []
@@ -117,7 +124,7 @@ class ClashRoyaleEnv:
 
         frame = self._capture_frame()
         frame = self._capture_frame()
-        frame = cv2.imread(img)
+        # frame = cv2.imread(img)
         frame = np.ascontiguousarray(frame)   # 🔥 FIX
         h, w  = frame.shape[:2]
         # cv2.imshow("frame", frame)
@@ -154,9 +161,10 @@ class ClashRoyaleEnv:
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
     # 🔥 SHOW RESULT
-        cv2.imshow("YOLO Detection", frame)
-        cv2.waitKey()   # use 1 for real-time, 0 for pause
-        cv2.destroyAllWindows()
+        # print("YOLO_DETECT")
+        # cv2.imshow("YOLO Detection", frame)
+        # cv2.waitKey()   # use 1 for real-time, 0 for pause
+        # cv2.destroyAllWindows()
         self._cached_results = detections
         return detections
 
@@ -174,9 +182,9 @@ class ClashRoyaleEnv:
             if cls in TOWER_CLASSES:
                 continue
             cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-            if "ally" in cls:
+            if self.fxn(cx,cy):
                 allies.append((cx, cy))
-            elif "enemy" in cls:
+            else:
                 enemies.append((cx, cy))
         
         def pad(units, n):
@@ -287,7 +295,7 @@ class ClashRoyaleEnv:
 
         if all(card == "Unknown" for card in self.current_cards):
             print("All cards Unknown — clicking fallback position.")
-            pyautogui.moveTo(1611, 831, duration=0.2)
+            pyautogui.moveTo(1611, 800, duration=0.2)
             pyautogui.click()
             return self._get_state(), 0, False
 
@@ -302,7 +310,7 @@ class ClashRoyaleEnv:
             card_name = self.current_cards[card_index]
             print(f"Playing: {card_name}")
             x = int(x_frac * 472)  + 1368
-            y = int(y_frac * 300) + 475
+            y = int(y_frac * 637) + 137
             print(x,y,card_index)
             self.actions.card_play(x, y, card_index)
             time.sleep(1)
@@ -511,7 +519,8 @@ if __name__ ==  '__main__':
     # print(a)
     # print(b)
     # print(c)
-    env._run_detection(r"C:\Users\shour\Downloads\WhatsApp Image 2026-04-05 at 11.59.23 PM.jpeg")
+    # env._run_detection(r"C:\Users\shour\Downloads\WhatsApp Image 2026-04-05 at 11.59.23 PM.jpeg")
+    print(env.fxn(120,0))
     # print(env._build_action_space())
     # val = pyautogui.center()
     # screenshot = pyautogui.screenshot(region=(

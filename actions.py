@@ -7,6 +7,8 @@ import pygetwindow as gw
 import cv2
 import numpy as np
 
+import pyscreeze
+pyscreeze.USE_IMAGE_NOT_FOUND_EXCEPTION = False
 
 # SPELL_CARDS = {
 #     "Fireball", "Zap", "Arrows", "Tornado",
@@ -166,8 +168,9 @@ class Actions:
         if card_index in self.card_keys:
             key = self.card_keys[card_index]
             print(f"Pressing key: {key}")
-            pyautogui.moveTo(1611, 831, duration=0.2)
+            pyautogui.moveTo(1611, 860, duration=0.2)
             pyautogui.click()
+            pyautogui.moveTo(1611, 460, duration=0.2)
             pyautogui.press(key)
             time.sleep(0.2)
             print(f"Moving mouse to: ({x}, {y})")
@@ -206,56 +209,60 @@ class Actions:
     #         pyautogui.moveTo(1705, 331, duration=0.2)
     #         pyautogui.click()
     #         time.sleep(1)
-    def click_battle_start(self):
-        button_image = os.path.join(self.check_images, "battle.png")
-        confidences = [0.8, 0.7, 0.6, 0.5]
 
-        region = (
-            # self.TOP_LEFT_X + int(0.30 * self.WIDTH),
-            # self.TOP_LEFT_Y + int(0.70 * self.HEIGHT),
-            # int(0.4 * self.WIDTH),
-            # int(0.2 * self.HEIGHT)
-            1510,
-            730,
-            240,
-            150
 
-        )
-        img = pyautogui.screenshot(region=region)
-        img = np.array(img)
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # these two if needed
-        res = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
-        res = res.astype(np.uint8)
 
-        cv2.imshow("res", res)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        # print("region",self.TOP_LEFT_X + int(0.31 * self.WIDTH),self.TOP_LEFT_Y + int(0.73 * self.HEIGHT))
+    # def click_battle_start(self):
+    #     button_image = os.path.join(self.check_images, "battle.png")
+    #     confidences = [0.8, 0.7, 0.6, 0.5]
 
-        start_time = time.time()    
-        # 10 sec loop for battle image finder      
-        while time.time() - start_time < 10:
-            for confidence in confidences:
-                try:
-                    location = pyautogui.locateOnScreen(
-                        button_image,
-                        confidence=confidence,
-                        region=region
-                    )
-                    if location:
-                        x, y = pyautogui.center(location)
-                        pyautogui.click(x, y)
-                        return True
-                except Exception as e:
-                    print(e)
-            # if we cannot see battle screen then something may be blocking it so , it is to click at somewhere in screen to see battle 
-            # pyautogui.click(self.TOP_LEFT_X + 450, self.TOP_LEFT_Y + 450)
-            # print("click region",self.TOP_LEFT_X + 200, self.TOP_LEFT_Y + 200)
-            time.sleep(1)
+    #     region = (
+    #         # self.TOP_LEFT_X + int(0.30 * self.WIDTH),
+    #         # self.TOP_LEFT_Y + int(0.70 * self.HEIGHT),
+    #         # int(0.4 * self.WIDTH),
+    #         # int(0.2 * self.HEIGHT)
+    #         1510,
+    #         730,
+    #         240,
+    #         150
 
-        return False
+    #     )
+    #     # img = pyautogui.screenshot(region=region)
+    #     # img = np.array(img)
+
+    #     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #     # # these two if needed
+    #     # res = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
+    #     # res = res.astype(np.uint8)
+
+    #     # cv2.imshow("res", res)
+    #     # cv2.waitKey(0)
+    #     # cv2.destroyAllWindows()
+    #     # print("region",self.TOP_LEFT_X + int(0.31 * self.WIDTH),self.TOP_LEFT_Y + int(0.73 * self.HEIGHT))
+
+    #     start_time = time.time()    
+    #     # 10 sec loop for battle image finder      
+    #     while time.time() - start_time < 10:
+    #         for confidence in confidences:
+    #             try:
+    #                 location = pyautogui.locateOnScreen(
+    #                     button_image,
+    #                     confidence=confidence,
+    #                     region=region
+    #                 )
+    #                 if location:
+    #                     x, y = pyautogui.center(location)
+    #                     pyautogui.click(x, y)
+    #                     return True
+    #             except Exception as e:
+    #                 print(e)
+    #         # if we cannot see battle screen then something may be blocking it so , it is to click at somewhere in screen to see battle 
+    #         # pyautogui.click(self.TOP_LEFT_X + 450, self.TOP_LEFT_Y + 450)
+    #         # print("click region",self.TOP_LEFT_X + 200, self.TOP_LEFT_Y + 200)
+    #         time.sleep(1)
+
+    #     return False
 
     # def detect_game_end(self):
     #     winner_img = os.path.join(self.images_folder, "Winner.png")
@@ -291,6 +298,127 @@ class Actions:
     #         print(f"[detect_game_end] Unexpected error: {e}")
     #     return None
 
+    # def detect_game_end(self):
+    #     winner_img = os.path.join(self.check_images, "Winner.png")
+
+    #     if not os.path.exists(winner_img):
+    #         return None
+
+    #     # 🔹 Dynamic region (middle-top area where "Winner!" appears)
+    #     winner_region = (
+    #         1400,
+    #         110,
+    #         400,
+    #         550
+    #     )
+    #     # scn = pyautogui.screenshot(region=(
+    #     #     1400,
+    #     #     110,
+    #     #     400,
+    #     #     550
+    #     #  )) 
+    #     # scn = np.array(scn) 
+    #     # ck = cv2.imshow("fr",scn) 
+    #     # cv2.waitKey(0) 
+    #     # cv2.destroyAllWindows()
+    #     # winner_img = cv2.imread(w_img) 
+    #     # winner_img = cv2.cvtColor(winner_img,cv2.COLOR_BGR2GRAY)
+
+    #     # 🔹 Dynamic threshold for victory/defeat split
+    #     threshold_y = 385
+    #     # print("tr",threshold_y)
+    #     confidences = [0.8, 0.7, 0.6]
+
+    #     try:
+    #         for confidence in confidences:
+    #             try:
+    #                 location = pyautogui.locateOnScreen(
+    #                     winner_img,
+    #                     confidence=confidence,
+    #                     grayscale=True,
+    #                     region=winner_region
+    #                 )
+    #             except OSError:
+    #                 return None
+    #             except Exception as e:
+    #                 print(f"[detect_game_end] locate error: {e}")
+    #                 continue
+
+    #             if location:
+    #                 x, y = pyautogui.center(location)
+
+    #                 # 🔹 Decide result dynamically
+    #                 result = "victory" if y > threshold_y else "defeat"
+
+    #                 print(f"Game end detected: {result} (y={y}, conf={confidence})")
+
+    #                 time.sleep(2)  # wait for UI to settle
+
+    #                 # click_x = self.TOP_LEFT_X + int(0.50 * self.WIDTH) - 30
+    #                 # click_y = self.TOP_LEFT_Y + int(0.85 * self.HEIGHT)+ 60
+
+    #                 # print(f"Clicking at ({click_x}, {click_y})")
+
+    #                 print("CLicking of 2 for match_final(OK)")
+    #                 pyautogui.moveTo(1611, 831, duration=0.2)
+    #                 pyautogui.click()
+    #                 pyautogui.press('2')
+    #                 # pyautogui.moveTo(click_x, click_y, duration=0.2)
+    #                 # pyautogui.click()
+    #                 print(result)
+    #                 return result
+
+    #     except Exception as e:
+    #         print(f"[detect_game_end] Unexpected error: {e}")
+
+    #     return None
+
+    def click_battle_start(self):
+        button_image = os.path.join(self.check_images, "battle.png")
+        confidences = [0.8, 0.7, 0.6, 0.5]
+
+        region = (
+            1510,
+            730,
+            240,
+            150
+        )
+        # scn = pyautogui.screenshot(region=region)
+        # scn = np.array(scn) 
+        # scn = cv2.cvtColor(scn,cv2.COLOR_BGR2RGB)
+        # ck = cv2.imshow("fr",scn) 
+        # cv2.waitKey(0) 
+        # cv2.destroyAllWindows()
+
+        start_time = time.time()    
+        clk = False
+        # 10 sec loop for battle image finder      
+        while time.time() - start_time < 10:
+            for confidence in confidences:
+                location = pyautogui.locateOnScreen(
+                    button_image,
+                    confidence=confidence,
+                    grayscale=True,
+                    region=region
+                )
+
+                if location and not clk:
+                    print(location)
+
+                    x, y = pyautogui.center(location)
+                    print(x,y)
+                    # pyautogui.moveTo(x, y, duration=0.2)
+                    pyautogui.click(x, y)
+                    clk = True
+                    return True
+
+            time.sleep(1)
+
+        return False
+
+
+
+
     def detect_game_end(self):
         winner_img = os.path.join(self.check_images, "Winner.png")
 
@@ -304,65 +432,37 @@ class Actions:
             400,
             550
         )
-        scn = pyautogui.screenshot(region=(
-            1400,
-            110,
-            400,
-            550
-         )) 
-        # scn = np.array(scn) 
-        # ck = cv2.imshow("fr",scn) 
-        # cv2.waitKey(0) 
-        # cv2.destroyAllWindows()
-        # winner_img = cv2.imread(w_img) 
-        # winner_img = cv2.cvtColor(winner_img,cv2.COLOR_BGR2GRAY)
 
         # 🔹 Dynamic threshold for victory/defeat split
         threshold_y = 385
-        # print("tr",threshold_y)
+
         confidences = [0.8, 0.7, 0.6]
 
-        try:
-            for confidence in confidences:
-                try:
-                    location = pyautogui.locateOnScreen(
-                        winner_img,
-                        confidence=confidence,
-                        grayscale=True,
-                        region=winner_region
-                    )
-                except OSError:
-                    return None
-                except Exception as e:
-                    print(f"[detect_game_end] locate error: {e}")
-                    continue
+        for confidence in confidences:
+            location = pyautogui.locateOnScreen(
+                winner_img,
+                confidence=confidence,
+                grayscale=True,
+                region=winner_region
+            )
 
-                if location:
-                    x, y = pyautogui.center(location)
+            if location:
+                x, y = pyautogui.center(location)
 
-                    # 🔹 Decide result dynamically
-                    result = "victory" if y > threshold_y else "defeat"
+                # 🔹 Decide result dynamically
+                result = "victory" if y > threshold_y else "defeat"
 
-                    print(f"Game end detected: {result} (y={y}, conf={confidence})")
+                print(f"Game end detected: {result} (y={y}, conf={confidence})")
 
-                    time.sleep(2)  # wait for UI to settle
+                time.sleep(2)  # wait for UI to settle
 
-                    # click_x = self.TOP_LEFT_X + int(0.50 * self.WIDTH) - 30
-                    # click_y = self.TOP_LEFT_Y + int(0.85 * self.HEIGHT)+ 60
+                print("CLicking of 2 for match_final(OK)")
+                pyautogui.moveTo(1611, 831, duration=0.2)
+                pyautogui.click()
+                pyautogui.press('2')
 
-                    # print(f"Clicking at ({click_x}, {click_y})")
-
-                    print("CLicking of 2 for match_final(OK)")
-                    pyautogui.moveTo(1611, 831, duration=0.2)
-                    pyautogui.click()
-                    pyautogui.press('2')
-                    # pyautogui.moveTo(click_x, click_y, duration=0.2)
-                    # pyautogui.click()
-                    print(result)
-                    return result
-
-        except Exception as e:
-            print(f"[detect_game_end] Unexpected error: {e}")
+                print(result)
+                return result
 
         return None
 
@@ -371,50 +471,76 @@ class Actions:
 
 
 
+    # def detect_match_over(self):
+    #     matchover_img = os.path.join(self.check_images, "matchover.png")
+    #     if not os.path.exists(matchover_img):
+    #         return False
+    #     # img = cv2.imread(matchover_img)
+    #     # print(img is None)
+    #     # # 🔹 Dynamic region (upper-middle area where "match over" appears)
+    #     region = (1400, 300, 420, 200)
 
+    #     # img = pyautogui.screenshot(region=region)
+    #     # img = np.array(img)
+
+    #     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #     # # these two if needed
+    #     # res = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
+    #     # res = res.astype(np.uint8)
+
+    #     confidences = [0.8, 0.6, 0.4]
+
+    #     try:
+    #         for confidence in confidences:
+    #             try:
+    #                 location = pyautogui.locateOnScreen(
+    #                     matchover_img,
+    #                     confidence=confidence,
+    #                     grayscale=True,
+    #                     region=region
+    #                 )
+    #             except OSError:
+    #                 return False
+    #             except Exception as e:
+    #                 print(f"[detect_match_over]1 locate error: {e}")
+    #                 continue
+
+    #             if location:
+    #                 x, y = pyautogui.center(location)
+    #                 print(f"Match over detected at ({x}, {y}) with conf={confidence}")
+    #                 return True
+
+    #     except Exception as e:
+    #         print(f"[detect_match_over]2 Unexpected error: {e}")
+
+    #     return False
     def detect_match_over(self):
         matchover_img = os.path.join(self.check_images, "matchover.png")
+
         if not os.path.exists(matchover_img):
             return False
-        # img = cv2.imread(matchover_img)
-        # print(img is None)
-        # # 🔹 Dynamic region (upper-middle area where "match over" appears)
+
         region = (1400, 300, 420, 200)
-
-        # img = pyautogui.screenshot(region=region)
-        # img = np.array(img)
-
-        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # # these two if needed
-        # res = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
-        # res = res.astype(np.uint8)
-
         confidences = [0.8, 0.6, 0.4]
 
-        try:
-            for confidence in confidences:
-                try:
-                    location = pyautogui.locateOnScreen(
-                        matchover_img,
-                        confidence=confidence,
-                        grayscale=True,
-                        region=region
-                    )
-                except OSError:
-                    return False
-                except Exception as e:
-                    print(f"[detect_match_over]1 locate error: {e}")
-                    continue
+        for confidence in confidences:
+            try:
+                location = pyautogui.locateOnScreen(
+                    matchover_img,
+                    confidence=confidence,
+                    grayscale=True,
+                    region=region
+                )
+            except pyautogui.ImageNotFoundException:
+                continue  # 🔹 THIS is the key fix
 
-                if location:
-                    x, y = pyautogui.center(location)
-                    print(f"Match over detected at ({x}, {y}) with conf={confidence}")
-                    return True
-
-        except Exception as e:
-            print(f"[detect_match_over]2 Unexpected error: {e}")
+            if location:
+                x, y = pyautogui.center(location)
+                print(f"Match over detected at ({x}, {y}) with conf={confidence}")
+                return True
 
         return False
+
 
 
 
@@ -435,8 +561,8 @@ if __name__ == '__main__':
     # print(actions.capture_individual_cards())
     # pyautogui.click(actions.TOP_LEFT_X + 10, actions.TOP_LEFT_Y + 10)
     # time.sleep(0.2)
-    actions.detect_match_over()
-    # actions.click_battle_start()
+    # actions.detect_match_over()
+    print(actions.click_battle_start())
     # actions.detect_game_end()
     # import cv2
     # import numpy as np
