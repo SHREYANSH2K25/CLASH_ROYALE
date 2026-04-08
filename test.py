@@ -39,7 +39,7 @@ from ultralytics import YOLO
 model = YOLO("models/card.pt")   # adjust path if needed
 
 # ===== LOAD IMAGE =====
-img = cv2.imread("screenshots\card_4.png")  # change to your image path
+img = cv2.imread("screenshots/card_4.png")  # change to your image path
 
 if img is None:
     print("Error: Image not found")
@@ -59,9 +59,9 @@ for r in results:
     best_class = names[max_idx]
     confidence = probs[max_idx]
 
-print(f"Prediction: {best_class[P]} ({confidence:.4f})")
+print(f"Prediction: {best_class} ({confidence:.4f})")
 
-# ===== OPTIONAL: SHOW IMAGE =====
+# ===== SHOW IMAGE =====
 cv2.imshow("Input", img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

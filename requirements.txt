@@ -1,0 +1,9 @@
+opencv-python==4.13.0.92  ##Image processing
+ultralytics==8.4.35  # yolo model for card and troop detection
+torch==2.11.0   # DL framework
+numpy==2.4.4    # numerical computing
+pyautogui==0.9.53   # screen control and clicking
+pygetwindow==0.0.9  # Bluestack window detection
+pyscreeze==0.1.30   # Image matching
+pynput==1.8.1       # Keyboard input for shutdown
+python-dotenv==1.0.1  # env configs

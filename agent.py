@@ -16,8 +16,10 @@ from env2 import ClashRoyaleEnv
 class KeyboardController:
     def __init__(self):
         self.should_exit = False
-        self.listener = keyboard.Listener(on_press=self.on_press)
-        self.listener.start()
+         
+        # .listener() defines what thread must execute when started
+        self.listener = keyboard.Listener(on_press=self.on_press) # execute this function
+        self.listener.start() # creates a thread
 
     def on_press(self, key):
         try:
@@ -70,11 +72,16 @@ class DQN_agn:
         self.criterion = nn.MSELoss()
         self.gamma = 0.95
 
+    # writing to the hard drive
+    # state_dict() -> python lib that maps each NN layer to its curr weights
+    # torch.save() takes that dict and saves it into a file
     def save(self, path):
         torch.save(self.model.state_dict(), path)
 
     def load(self, path):
-        self.model.load_state_dict(torch.load(path))
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.model.load_state_dict(torch.load(path, map_location=device))
+        # CRUCIAL : function updates target model after set of steps
         self.target_model.load_state_dict(self.model.state_dict())
 
 
