@@ -55,7 +55,7 @@ class Actions:
         self.CARD_BAR_WIDTH  = int(0.72 * self.WIDTH)
         self.CARD_BAR_HEIGHT = int(0.13 * self.HEIGHT)
         # print(self.CARD_BAR_X, self.CARD_BAR_Y, self.CARD_BAR_WIDTH, self.CARD_BAR_HEIGHT)
-        # Card position to key mapping
+        # Card position to key mapping - maps 4 card slots to keyboard keys
         self.card_keys = {
             0: '1',  # Changed from 1 to 0
             1: '2',  # Changed from 2 to 1
@@ -65,7 +65,9 @@ class Actions:
         
         # Card name to position mapping (will be updated during detection)
         self.current_card_positions = {}
+        
     # saves card in save_path(if given) and returns numpy array
+    # Grabs the entire BlueStacks window
     def capture_area(self, save_path=None):
         try:
             screenshot = pyautogui.screenshot(region=(self.TOP_LEFT_X, self.TOP_LEFT_Y, self.WIDTH, self.HEIGHT))
@@ -76,6 +78,7 @@ class Actions:
             screenshot.save(save_path)
         return   np.array(screenshot)[:, :, ::-1]
 
+    # Specifically crops out the bottom section where your cards are displayed
     def capture_card_area(self, save_path):
         screenshot = pyautogui.screenshot(region=(
             self.CARD_BAR_X, 
@@ -85,6 +88,9 @@ class Actions:
         ))
         screenshot.save(save_path)
         return screenshot
+    
+    # Divides card bar into four equal pieces to look at each card slot individually
+    # takes same big picture but then uses code to slice it into four smaller equal pieces.
     def capture_individual_cards(self):
         screenshot = pyautogui.screenshot(region=(
             self.CARD_BAR_X, 
@@ -93,10 +99,9 @@ class Actions:
             self.CARD_BAR_HEIGHT
         ))
         
-
+        # slicing
         card_width = self.CARD_BAR_WIDTH // 4
         cards = []
-        
         for i in range(4):
             left = i * card_width
             card_img = screenshot.crop((left, 0, left + card_width, self.CARD_BAR_HEIGHT))
@@ -116,27 +121,37 @@ class Actions:
         left, top, width, height = win.left, win.top, win.width, win.height
 
         try:
+            # takes snapshot of only the area covered by the BlueStack window
             screenshot = pyautogui.screenshot(region=(left, top, width, height))
         except OSError as e:
             print(f"[count_elixir] Screen grab failed: {e}")
             return 0
+        
+        # Pygame takes screenshot in RGB format, but OpenCV works in BGR
         img = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
 
         h, w, _ = img.shape
 
+        # elixir always at bottom of the screen. Crop only to bottom 20% 
         roi = img[int(h * 0.8):h, 0:w]
 
+        # converts the crop to hsv [hue, saturation, Value]
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
+        # mark ranges of purple so as to adjust as per brightness of screen
         lower_purple = np.array([130, 80, 80])
         upper_purple = np.array([170, 255, 255])
 
+        # convert every pixel within range to binary image with purple area white(255) and rest all black(0)
         mask = cv2.inRange(hsv, lower_purple, upper_purple)
 
+        # used to detect shapes of white pixel in mask
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         elixir = 0
 
+        # it draws an invisible box around that purple bar and measures its width
+        # width of purple is approx 70% of screen width then count 10 elexir and continue in this ratio
         if contours:
             largest = max(contours, key=cv2.contourArea)
             x, y, w_box, h_box = cv2.boundingRect(largest)
@@ -154,26 +169,38 @@ class Actions:
     # {'class': 'shr', 'x': 0},
     # {'class': 'her', 'x': 1}
     # ]
+    
+    # The AI doesn't just look at the screen; 
+    # it maintains a "map" of which card is in which slot
     def update_card_positions(self, detections):
+        # It takes a list of detections (which unit was found at which X-coordinate) 
+        # then sorts them from left to right.
         sorted_cards = sorted(detections, key=lambda x: x['x'])
-        
+         
+        # assign each unit class(like knight or archer) to an index from 0 to 3
         self.current_card_positions = {
             card['class']: idx  # Removed +1 
             for idx, card in enumerate(sorted_cards)
     }
-#  plays card_index on x,y coordinate
-# 
+    
+    # plays card_index on x,y coordinate
     def card_play(self, x, y, card_index):
         print(f"Playing card {card_index} at position ({x}, {y})")
         if card_index in self.card_keys:
+            
             key = self.card_keys[card_index]
             print(f"Pressing key: {key}")
+            
+            #check if clicks in right area 
             pyautogui.moveTo(1611, 860, duration=0.2)
             pyautogui.click()
             pyautogui.moveTo(1611, 460, duration=0.2)
+            
+            # select card key
             pyautogui.press(key)
             time.sleep(0.2)
             print(f"Moving mouse to: ({x}, {y})")
+            # place on {x,y}
             pyautogui.moveTo(x, y, duration=0.2)
             print("Clicking")
             pyautogui.click()
@@ -373,6 +400,8 @@ class Actions:
 
     #     return None
 
+    
+    # BATTLE BUTTON template matching
     def click_battle_start(self):
         button_image = os.path.join(self.check_images, "battle.png")
         confidences = [0.8, 0.7, 0.6, 0.5]
@@ -395,16 +424,17 @@ class Actions:
         # 10 sec loop for battle image finder      
         while time.time() - start_time < 10:
             for confidence in confidences:
+                # pass target, confidencse, color blind mode(for speedy searching), search area
                 location = pyautogui.locateOnScreen(
                     button_image,
                     confidence=confidence,
-                    grayscale=True,
+                    grayscale=True, # ignores color and only looks at the shapes of the letters/button
                     region=region
                 )
 
                 if location and not clk:
                     print(location)
-
+                    #clicks at the center of the button if found
                     x, y = pyautogui.center(location)
                     print(x,y)
                     # pyautogui.moveTo(x, y, duration=0.2)
@@ -415,7 +445,6 @@ class Actions:
             time.sleep(1)
 
         return False
-
 
 
 
@@ -434,6 +463,7 @@ class Actions:
         )
 
         # 🔹 Dynamic threshold for victory/defeat split
+        # horizontal "dividing line" used to tell the difference between a Victory and a Defeat.
         threshold_y = 385
 
         confidences = [0.8, 0.7, 0.6]
@@ -457,8 +487,11 @@ class Actions:
                 time.sleep(2)  # wait for UI to settle
 
                 print("CLicking of 2 for match_final(OK)")
+                
+                # targetting ok button
                 pyautogui.moveTo(1611, 831, duration=0.2)
                 pyautogui.click()
+                # Key '2' usually opens the Main Battle Screen.
                 pyautogui.press('2')
 
                 print(result)
