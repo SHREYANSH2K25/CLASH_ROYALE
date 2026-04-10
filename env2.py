@@ -41,9 +41,10 @@ class ClashRoyaleEnv:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"[ClashRoyaleEnv] Using device: {self.device}")
         base = os.path.dirname(__file__)
-        self.model = YOLO(os.path.join(base, "YOLO_MODEL", "troop6.pt"))
-        self.card_model = YOLO("YOLO_MODEL/card.pt").to(self.device)
+        self.model = YOLO(os.path.join(base, "YOLO_MODEL", "troop6.pt")) # to detect troops on the field
+        self.card_model = YOLO("YOLO_MODEL/card.pt").to(self.device) # to detect card in hand
         # ── Per-step frame / detection cache ───────────────────────────────────
+        # these are short term memory for single step in game
         self._cached_frame   = None   # raw numpy frame
         self._cached_results = None   # list of (x1,y1,x2,y2,conf,cls) tuples
         # from inference_sdk import InferenceHTTPClient
@@ -59,7 +60,10 @@ class ClashRoyaleEnv:
         self.num_cards   = 4
         self.grid_width  = 18
         self.grid_height = 28
-        self.state_size  = 1 + 2 * (MAX_ALLIES + MAX_ENEMIES)
+        
+        # number of slots in the list sent to NN
+        # 1st is elixir_count then for every troop on the field AI needs to know its (x,y)
+        self.state_size  = 1 + 2 * (MAX_ALLIES + MAX_ENEMIES) # multiplied by 2 because x and y for each
         
         self.available_actions = self._build_action_space()
         self.action_size       = len(self.available_actions)
@@ -104,11 +108,12 @@ class ClashRoyaleEnv:
 
     # return number of enemy and number of ally and,
     def fxn(self,a,b):
+        # a -> x coord && 456 is mid point 
         var_a = 4
         var_b = 0.03
-        var_c = 0.2
+        var_c = 0.2 # threshold
         # if 775-a > 
-        return (1/(1+ np.exp(var_b*(456-a)))) > var_c
+        return (1/(1+ np.exp(var_b*(456-a)))) > var_c  #Sigmoid
 
     def _run_detection(self):
         """Run YOLO on the current frame once per step, return detection list."""
@@ -129,22 +134,30 @@ class ClashRoyaleEnv:
         h, w  = frame.shape[:2]
         # cv2.imshow("frame", frame)
         # cv2.waitKey(0)
+        # img resized to 640x640
         resized = cv2.resize(frame, (INFER_W, INFER_H))
+        #INFERENCE -> results object contains everything AI saw
+        # it holds confidence, coords and class id
         results = self.model(resized, device=self.device, verbose=False)[0]
         # print("results",results)
+        # scale factors -> these multiplier stretcch detected coords back to original position on field
         scale_x = w / INFER_W
         scale_y = h / INFER_H
 
         detections = []
+        # Inside loop : iterating through every object AI detected
+        # then did confidence check, classification, coord mapping and data storage
         for box in results.boxes:
             conf = float(box.conf[0])
-            if conf < CONF_THRES:
+            if conf < CONF_THRES: # if less that threshold ignore the object
                 continue
-
+            
+            # classification
             cls = results.names[int(box.cls[0])].lower().strip()
+            # get coordinates
             x1, y1, x2, y2 = box.xyxy[0]
 
-            # 🔥 SCALE FIRST
+            # SCALE FIRST
             x1 = int(float(x1) * scale_x)
             y1 = int(float(y1) * scale_y)
             x2 = int(float(x2) * scale_x)
@@ -152,11 +165,13 @@ class ClashRoyaleEnv:
 
             detections.append((x1, y1, x2, y2, conf, cls))
 
+            # open CV color format is BGR so set color if character is opponent or ally
             color = (0, 255, 0) if "ally" in cls else (0, 0, 255)
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
             label = f"{cls} {conf:.2f}"
+            # places the text (class name and confidence score) 10 px above the top left center of box to avoid overlap and help inn debug
             cv2.putText(frame, label, (x1, y1 - 10),
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
@@ -187,6 +202,7 @@ class ClashRoyaleEnv:
             else:
                 enemies.append((cx, cy))
         
+        # padding to make all arrays of equal size
         def pad(units, n):
             units = units[:n]
             units += [(0.0, 0.0)] * (n - len(units))
@@ -196,6 +212,7 @@ class ClashRoyaleEnv:
         enemies = pad(enemies, MAX_ENEMIES)
 
         raw = []
+        # normalizing to scale all values between 0 and 1
         for x, y in allies + enemies:
             raw.append(x / self.actions.WIDTH)
             raw.append(y / self.actions.HEIGHT)
@@ -253,8 +270,6 @@ class ClashRoyaleEnv:
     # ══════════════════════════════════════════════════════════════════════════
     # STEP
     # ══════════════════════════════════════════════════════════════════════════
-
-
 
     def step(self, action_index):
         # Invalidate per-step cache
@@ -402,6 +417,7 @@ class ClashRoyaleEnv:
                 # if avg_sat < 25 and color_diff < 20:
                 #     cards.append("Unknown")
                 #     continue
+                
                 res = self.card_model(img, device=self.device, verbose=False)[0]
 
                 # classification output
